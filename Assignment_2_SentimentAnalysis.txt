@@ -1,0 +1,594 @@
+Assignment #2: Sentiment Analysis
+Total score: 130
+This assignment can be completed individually or by a team of a maximum of three members.
+Due date: See the course page
+
+Objectives
+
+Build sentiment analysis models and apply them to financial news to estimate the impact of news
+on stock prices.
+
+Datasets
+Two financial news datasets collected for several years (2009-2020) by publishers are provided:
+•
+
+“analyst_ratings.csv” – Headlines collected by Publisher A, which may include the price
+targets estimated by professional analysts through complex modeling to estimate the
+current intrinsic value of the company.
+
+•
+
+“headlines.csv” – Headlines collected by Publisher B, without price target information.
+
+Both datasets follow a similar schema:
+analyst_ratings(id, headline, URL, publisher, date, symbol)
+• id: row number
+• headline: headline news that may include the target price (not all headlines indicate the
+target price).
+• URL: the URL of the headline news
+• Publisher: news publisher
+• Date: published date and time
+• stock: stock symbol representing the company used by traders in the market.
+headlines(id, headline, URL, publisher, date, symbol)
+
+Problem Context
+Stock price fluctuates daily due to company-specific developments, sector-wide trends, market
+sentiments, and/or unpredictable external factors. Since a company's intrinsic value is unknown,
+predicting stock price movements is extremely challenging. In this assignment, you will develop
+sentiment analysis models that can estimate the potential impact of financial news on future
+stock prices and write a brief analysis report about the modeling results.
+
+1
+
+Organization of Program Files and Directories
+The required program files and directory structure are provided in “Assignment_2.zip” for
+efficient grading. Before getting started, review the helper functions and test file: “util.py”,
+“webscraping.py”, “webscraping_headless_parsing.py”, “dataset_schema.py”,
+“test_dataset_schema.py”. These files are provided to help you standardize and validate your
+CSV files. Each file in the directories is currently blank and must be completed by you. The file
+names correspond to the required tasks described in the sections below. Do not change any file
+names, directory names, or the directory structure. For example, the program
+“2_trading_sim_eval.py” should be executable with the command:
+“python 2_trading_sim_eval.py” without requiring additional parameters or instructions.
+
+Required Tasks
+Phase 1: Data Collection and Preprocessing
+1.1 Collect historical prices, S&P 500 indices, and news data
+Complete the program “1_collect_data.py” for the following task.
+(a) Download historical daily prices for each stock symbol in the datasets, along with S&P
+500 index for the same period, from a freely available data sources (e.g., Yahoo Finance)
+using any available Python package (e.g., “yfinance” or “yahoo-fin”). Save the price data
+locally in a file named “historical_prices.csv”. For each symbol, the required fields are at
+least: “symbol”, “date”, “open”, “high”, “low”, “AdjClose”, and “volume”. Note that
+adjusted close provides a more accurate price than the raw close price. So, we will use it
+for close price. For consistency, treat the daily S&P 500 index values like stock prices
+with the symbol “s&p”, and include them in historical_prices.csv. You may include
+additional
+
+fields
+
+if
+
+needed
+
+for
+
+more
+
+detailed
+
+analysis.
+
+The
+
+schema
+
+for
+
+historical_prices.csv will be:
+historical_prices(date, symbol, open, high, low, close, volume)
+(b) Download the full news articles from the URLs provided in the dataset for at least six
+consecutive years. These articles will be used to create training and test datasets. You
+
+2
+
+may use Python web scrapping tools (e.g., requests, BeautifulSoup, playwright, selenium,
+etc.).
+Note: When scraping, please follow ethical and legal guidelines
+•
+
+Check each website’s robots.txt file to ensure scraping is allowed.
+
+•
+
+Respect rate limits to avoid overloading servers.
+
+•
+
+Use official APIs where available, since they may provide more reliable and
+compliant access to the data.
+
+Full new articles can be downloaded from several sites, including Benzinga, Zacks,
+Gurufocus, and Seekingalpha. However, Gurufocus appears to block any attempts at
+automated scrapping. Refer to the sample code for web scraping.
+If none of the sites allowed scraping, this step will be skipped.
+(c) Create a new dataset “all_news.csv” by merging the two datasets. Include all fields from
+the original datasets, removing redundant content if any, and add a new field “article” for
+the full news articles. The schema for “all_news.csv” will be:
+all_news(date, symbol, headline, URL, article, publisher)
+1.2 Calculate volatility
+Complete the program “2_calculate_volatility.py” for the following task.
+We assume that impactful news affects the stock price for about three days. The average
+daily volatility (implied daily risk) for each company and the S&P 500 index is calculated as
+the standard deviation of returns over three trading days, expressed as a percentage.
+•
+
+Daily log return
+𝑃𝑃 −𝑃𝑃
+
+𝑃𝑃
+
+From the simple return in percentage 𝑅𝑅𝑡𝑡 = 𝑡𝑡𝑃𝑃 𝑡𝑡−1 = 𝑃𝑃 𝑡𝑡 − 1 and continuous
+𝑡𝑡−1
+
+𝑡𝑡−1
+
+compounding formula 𝑃𝑃𝑡𝑡 = 𝑃𝑃𝑡𝑡−1 𝑒𝑒 𝑟𝑟𝑡𝑡 , we can calculate the daily log returns:
+𝑃𝑃
+
+𝑟𝑟𝑡𝑡 = ln(𝑃𝑃 𝑡𝑡 ) or 𝑟𝑟𝑡𝑡 = ln(1 + 𝑅𝑅𝑡𝑡 ) where 𝑃𝑃𝑡𝑡 is the price at time t and 𝑃𝑃𝑡𝑡−1 is the price at
+𝑡𝑡−1
+
+previous time (three trading days ago).
+
+3
+
+•
+
+Daily volatility
+The standard deviation of returns provides the average daily volatility: 𝜎𝜎𝑤𝑤 = stdev(𝑟𝑟𝑡𝑡 )
+
+for each stock and S&P 500 index. Optionally, periodic volatility can be calculated
+
+for longer intervals: 𝜎𝜎𝑝𝑝𝑝𝑝𝑝𝑝𝑝𝑝𝑝𝑝𝑝𝑝 = 𝜎𝜎𝑤𝑤 × √𝑡𝑡𝑡𝑡𝑡𝑡𝑡𝑡. For example, the annualized volatility:
+
+𝜎𝜎𝑎𝑎𝑎𝑎𝑎𝑎𝑎𝑎𝑎𝑎𝑎𝑎 = 𝜎𝜎𝑤𝑤 ×√252 (assuming 252 trading days in a year). Note: Volatility is the
+square root of variance and can be interpreted as risk. Risks accumulate additively in
+variance, so annual volatility can be considered as yearly risk.
+
+•
+
+Market-adjusted return and volatility
+Stock prices are influenced by both market sentiment (reflected in S&P 500 volatility)
+and company-specific news. To account for market influence, we can calculate the
+market-adjusted return (also called abnormal return) and market-adjusted volatility by
+regressing the stock’s daily log returns on the market’s daily log returns.
+The market model is defined as: 𝒓𝒓𝒂𝒂,𝒕𝒕 = 𝜶𝜶 + 𝜷𝜷𝒓𝒓𝒎𝒎,𝒕𝒕 + 𝝐𝝐𝒕𝒕
+where:
+o
+o
+o
+
+𝑟𝑟𝑎𝑎,𝑡𝑡 = market model, observed asset 𝑎𝑎 return at time t (that is 𝑟𝑟𝑡𝑡 )
+𝑟𝑟𝑚𝑚,𝑡𝑡 = market (S&P 500) log return at time t
+
+𝛼𝛼� = 𝑟𝑟�𝑡𝑡 − 𝛽𝛽̂ 𝑟𝑟�����
+𝑚𝑚,𝑡𝑡 (Intercept, expected return after accounting for market exposure)
+𝑁𝑁
+
+∑ (𝑟𝑟 −𝑟𝑟� )(𝑟𝑟𝑚𝑚,𝑡𝑡 −𝑟𝑟
+������)
+𝐶𝐶𝐶𝐶𝐶𝐶(𝑟𝑟 ,𝑟𝑟 )
+𝑚𝑚,𝑡𝑡
+o 𝛽𝛽̂ = 𝑉𝑉𝑉𝑉𝑉𝑉(𝑟𝑟𝑡𝑡 𝑚𝑚,𝑡𝑡) = 𝑡𝑡 ∑𝑁𝑁𝑡𝑡 (𝑟𝑟 𝑡𝑡 −𝑟𝑟
+(stock’s sensitivity to the market)
+������)2
+𝑚𝑚,𝑡𝑡
+
+𝑡𝑡
+
+𝑚𝑚,𝑡𝑡
+
+𝑚𝑚,𝑡𝑡
+
+o 𝜖𝜖𝑡𝑡 = idiosyncratic return (residual)
+
+The market-adjusted return (or idiosyncratic return after removing the market
+� 𝒓𝒓𝒎𝒎,𝒕𝒕 )
+� + 𝜷𝜷
+effect) is: 𝝐𝝐�𝒕𝒕 = 𝒓𝒓𝒂𝒂,𝒕𝒕 − (𝜶𝜶
+The market-adjusted volatility (or idiosyncratic volatility) is:
+𝟏𝟏
+
+�)𝟐𝟐
+𝝈𝝈𝜺𝜺𝒕𝒕 = 𝐬𝐬𝐬𝐬𝐬𝐬𝐬𝐬𝐬𝐬(𝜺𝜺𝒕𝒕 ) = �𝑵𝑵−𝟏𝟏 ∑𝑵𝑵
+𝒕𝒕 (𝜺𝜺𝒕𝒕 − 𝜺𝜺
+The asset volatility (combining market-driven and idiosyncratic components) is:
+𝝈𝝈𝒓𝒓𝒂𝒂,𝒕𝒕 = 𝐬𝐬𝐬𝐬𝐬𝐬𝐬𝐬𝐬𝐬(𝒓𝒓𝒂𝒂,𝒕𝒕 ) where 𝒓𝒓𝒂𝒂,𝒕𝒕 = 𝜶𝜶 + 𝜷𝜷𝒓𝒓𝒎𝒎,𝒕𝒕 + 𝝐𝝐𝒕𝒕
+
+4
+
+•
+
+Interpretation
+Beta (𝜷𝜷) measures how sensitive your stock is to the market, capturing the systemic
+risk (the part of stock volatility explained by market movements. So, 𝛽𝛽 = 1, stock
+moves in line with the market; 𝛽𝛽 > 1, the stock is more volatile than the market; 𝛽𝛽 <
+
+1, stock is less volatile than the market; 𝛽𝛽 < 0, the stock moves opposite to the
+market.
+
+Alpha (𝜶𝜶) represents abnormal/excess return, that is, the expected return of the stock
+after accounting for its exposure to the market. So, 𝛼𝛼 > 0, stock outperforms what’s
+expected given its beta; 𝛼𝛼 < 0, stock underperforms what’s expected given its beta.
+
+Residual (𝝐𝝐𝒕𝒕 ) is the idiosyncratic return, the portion of the stock return not explained
+
+by the market.
+
+1.3 Estimate impact scores
+Complete the program “3_estimate_impact_scores.py” for the following task.
+(a) Calculate the impact score based on the return and volatility, and map it into a discrete
+range [-3, +3] as impact scores, where -1, -2, -3 = negative impact, 1, 2, 3 = positive
+impact, and 0 = neutral, formally: 𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖_𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑡𝑡 = 𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠(𝑟𝑟𝑡𝑡 ) ∙ 𝑓𝑓(𝜎𝜎𝑡𝑡 ).
+
+•
+•
+
+Return 𝒓𝒓𝒕𝒕 captures the direction of the market reaction. For computing the impact
+score, we will use the market-adjusted return 𝝐𝝐𝒕𝒕 instead of the daily return 𝑟𝑟𝑡𝑡 .
+
+Volatility 𝝈𝝈𝒕𝒕 captures the magnitude/uncertainty of the market reaction. We will use
+the total stock volatility 𝝈𝝈𝒓𝒓𝒂𝒂,𝒕𝒕 (including both market-driven and idiosyncratic
+
+•
+
+components) instead of daily volatility 𝜎𝜎𝑡𝑡 .
+
+Implication of the impact score: A large impact score indicates a large positive
+return with high volatility (+3), a small impact score indicates a small positive return
+with low volatility (+1), a large negative impact score indicates a large negative
+return with high volatility (−3), and other combinations follow similarly.
+
+Z-score normalization and composite score
+•
+
+Normalize both return and volatility using z-scores:
+
+5
+
+𝝐𝝐 −𝜇𝜇
+
+•
+
+Normalized return 𝑧𝑧𝑟𝑟 = 𝒕𝒕𝜎𝜎 𝑟𝑟 and volatility 𝑧𝑧𝜎𝜎 =
+𝑟𝑟
+
+𝝈𝝈𝜺𝜺𝒕𝒕 −𝜇𝜇𝜎𝜎
+𝜎𝜎𝜎𝜎
+
+Define a composite impact score function that maps return and volatility into impact
+scores:
+𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊_𝒔𝒔𝒔𝒔𝒔𝒔𝒔𝒔𝒔𝒔𝒕𝒕 = �
+where:
+
+𝐢𝐢𝐢𝐢 |𝒛𝒛𝒓𝒓 | ≤ 𝟎𝟎. 𝟓𝟓
+𝒔𝒔𝒔𝒔𝒔𝒔𝒔𝒔(𝒛𝒛𝒓𝒓 ) ∙ �𝟏𝟏 + 𝑰𝑰(|𝒛𝒛𝒓𝒓 | > 𝟏𝟏) + 𝑰𝑰(𝒛𝒛𝝈𝝈 > 𝟏𝟏)�, 𝐢𝐢𝐢𝐢 |𝒛𝒛𝒓𝒓 | > 𝟎𝟎. 𝟓𝟓
+𝟎𝟎,
+
+o 𝐼𝐼(∙) is an indicator function that equals 1 if the condition is true, 0 otherwise.
+
+o Return thresholds: Large move if |𝑧𝑧𝑟𝑟 | > 1, small move if 0.5 < |𝑧𝑧𝑟𝑟 | ≤ 1 ,
+neutral: |𝑧𝑧𝑟𝑟 | ≤ 0.5
+
+o Volatility thresholds: 𝑧𝑧𝜎𝜎 > 1, normal volatility otherwise
+
+(b) Create a new dataset “historical_prices_impact.csv” from historical_prices.csv” by
+adding the returns, volatilities and impact score calculated from sections 1.2 and 1.3.
+The schema for historical_prices_impact.csv will be:
+historical_prices_impact(date, symbol, open, high, low, close, volume, daily_return,
+daily_volatility, market_return, beta, alpha, market_adj_return, market_adj_volatility,
+impact_score)
+1.4 Identify sentiment words and vectorize the news data
+Complete the program “4_identify_and_vectorize.py” for the following task.
+(a) From the datasets, identify the top 10 sentiment-bearing words that are generally
+known to influence stock prices (e.g., gain, loss, strong, weak, upgrade, downgrade, etc.),
+list them with a brief justification of your choices based on the supporting evidence, and
+explain how these words were incorporated into the vectorization process.
+(b) Create a new dataset “aggregated_news.csv” from “all_news.csv” by aggregating all the
+news (both headlines and full articles) over three consecutive trading days. This
+aggregation assumes that stock prices are influenced by news from the past three trading
+days. Specifically, we assume that the current impact score at time 𝑡𝑡 reflects news
+
+published at time 𝑡𝑡 as well as the previous two trading days (𝑡𝑡, 𝑡𝑡 − 1, 𝑡𝑡 − 2). The schema
+
+for “aggregated_news.csv” will be:
+
+6
+
+aggregated_news(date, symbol, news) where news is aggregated news.
+(c) Preprocess the news data for sentiment analysis.
+The headlines or full news articles are in text or HTML format and can contain
+unnecessary text content. As discussed in class, the possible text preprocessing tasks are:
+•
+
+Tokenization and text normalization: extracting tokens, lowercasing, removing
+punctuation, etc.
+
+•
+
+Relevant text extraction: to ensure that only the main content of the news article or
+headline is retained, removing irrelevant contents such as HTML tags, advertisement,
+navigation menus, or unrelated HTML content.
+
+•
+
+Additional text processing: to handle stop words, negation, occurrence of important
+words, etc. (see slide #29).
+
+•
+
+Optional preprocessing steps: stemming or lemmatization, or handling special
+characters.
+
+After preprocessing, briefly describe the preprocessing methods you applied and explain
+why they are important for sentiment analysis.
+(d) Vectorize the aggregated news in “aggregated_news.csv” using a Document-Term Matrix
+(DTM), a TF-IDF weighted DTM, and a custom (curated) feature matrix (see slide #43
+for an example) and create new datasets by adding the impact score from
+“historical_prices_impact.csv”. The schema for each dataset will be:
+vectorized_news_dtm(date, symbol, news_vector, impact_score)
+vectorized_news_tfidf(date, symbol, news_vector, impact_score)
+vectorized_news_curated(date, symbol, news_vector, impact_score)
+
+7
+
+Phase 2: Text Classification for Sentiment Analysis
+2.1 Data preparation
+Complete the program “1_process.py” for the following task.
+Dataset selection and splitting for each vectorized dataset in section 1.4 (d)
+•
+
+Select a consecutive time segment of at least three years and split it into training (80%)
+and testing (20%) sets, maintaining sequential order within each segment. The selected
+segment may come from the beginning, middle, end, or all of the dataset, but the split
+must preserve sequential time order to avoid mixing future data into the past or
+prevent lookahead bias.
+
+2.2 Classification modeling
+(a) MLP design for training
+Complete the program “2_model.py” for the following task.
+Design a MLP in Pytorch to train a classifier on each vectorized dataset created in
+section 1.4 (d) and clearly describe the key architectural choices, including:
+•
+
+Number of layers, Number of neurons per layer, Activation functions
+
+•
+
+Other hyperparameters (e.g., learning rate, batch size, optimizer, number of epochs).
+
+(b) Training
+Complete the program “2_training.py” for the following task.
+Train the model and save the model as “[name of your model].pth”. You can do this
+through torch.save(). For further information, refer to PyTorch.
+(c) Evaluation
+Complete the program “4_eval.py” for the following task.
+Load the model you saved in step (b). Evaluate and compare the performance of each
+classifier in terms of % accuracy and discuss the results in the report file.
+
+Phase 3: Trading Simulation
+3.1 Trading rules
+Complete the program “1_trading_rules.py” for the following task.
+8
+
+Assumption:
+•
+
+All orders are executed at the daily closing price.
+
+•
+
+No transaction fees are considered.
+
+Impact score estimation and trading strategies
+For each day, estimate the impact score for the past three trading days of news using the
+trained model. For trading decisions, use the impact scores predicted by the model
+(learned during training) rather than the precalculated impact scores from Section 1.3.
+Implement a simple sentiment-driven trading system based on the following strategies:
+Buy rule: If news has a positive score, buy x number of shares:
+𝒙𝒙 = 𝐦𝐦𝐦𝐦𝐦𝐦 [𝟏𝟏, 𝒇𝒇𝒇𝒇𝒇𝒇𝒇𝒇𝒇𝒇(
+
+where:
+•
+•
+
+𝜶𝜶∙𝒔𝒔%∙𝒃𝒃
+𝒑𝒑
+
+𝒃𝒃
+
+)] if 𝒑𝒑 ≥ 𝟏𝟏, 0 otherwise
+
+p = stock price, 𝑠𝑠 = impact score, 𝑏𝑏 = current cash balance, 𝛼𝛼 = a multiplier ≤ 10
+(e.g., 𝛼𝛼 = 2, used to determine the amount of investment for each order)
+
+𝜶𝜶 ∙ 𝒔𝒔% = 𝛼𝛼 × 𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖𝑖_𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠𝑠% (e.g., if 𝛼𝛼 = 2 and 𝑠𝑠 = 2, then 2𝑠𝑠% = 4%).
+
+Buy only if the balance is sufficient enough to purchase at least one share. For example,
+the current balance 𝑏𝑏 = $20,000, stock price p = $10.3,
+
+and impact score 𝑠𝑠 = 2, then 𝑥𝑥 = 𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓(
+
+0.04×20000
+10.3
+
+) = 77. So, you buy 77 shares.
+
+Sell rule: If news has a negative score and you own at least one share (no short selling
+𝒓𝒓 − 𝒙𝒙, 𝐢𝐢𝐢𝐢 𝒓𝒓 ≥ 𝒙𝒙
+allowed), sell y number of shares: 𝒚𝒚 = �
+.
+𝒓𝒓, 𝐢𝐢𝐢𝐢 𝒓𝒓 < 𝒙𝒙
+where:
+•
+
+•
+
+𝑟𝑟 > 0 = number of shares currently owned
+
+𝑥𝑥 = number of shares calculated from the buy rule above
+
+Neural rule: If new is neutral, take no action (no buy or sell).
+3.2 Trading simulation for performance evaluation
+
+Complete the program “2_trading_sim_eval.py” for the following task.
+
+9
+
+(a) Initial setup and liquidation
+•
+
+Assume your account starts with an initial balance of $100,000 on the first trading
+day in the dataset. All Buy/Sell orders are assumed to be filled immediately at the
+requested close price with no trading fees.
+
+•
+
+On the final trading day in the dataset, sell all remaining stocks at the closing
+price, ensuring that the account balance is fully in cash.
+
+(b) Trade tracking and performance metrics
+For each trade, calculate:
+•
+
+$gain/loss for the trade
+
+•
+
+Total $gain/loss for all trades
+
+•
+
+Annual % return,
+
+•
+
+Total % return relative to the initial balance
+
+•
+
+Available cash for trade
+
+Log all trade data into a file “trade_log.csv”, including the following fields:
+•
+
+Transaction date
+
+•
+
+Symbol
+
+•
+
+Trade type (Buy/Sell)
+
+•
+
+Number of shares
+
+•
+
+Price
+
+•
+
+Transaction amount
+
+•
+
+Available cash after the trade
+
+•
+
+News (headline)
+
+•
+
+Impact score
+
+Log the final summary into a file “final_summary.csv”, including the following fields:
+•
+
+Total $gain/loss
+
+•
+
+Average annual % return
+
+•
+
+Total % return
+
+•
+
+Final account balance
+
+10
+
+Note: The log file serves as a valuable resource for debugging and validating your trading
+simulation results.
+
+Phase 4: Analysis and Reflection
+4.1 Summary and conclusion
+(a) Briefly summarize your overall sentiment analysis results, highlighting key observations.
+Evaluate the effectiveness of trading strategies informed by the return and volatilitybased impact scoring method and discuss any limitations of the method, including
+assumptions made, potential biases, or data constraints.
+(b) Reflect on your experience, including challenges faced, insights gained, and lessons
+learned from implementing the workflow.
+4.2 Improvement and future work
+(a) Suggest any potential improvements or alternative approaches that could achieve more
+accurate sentiment analysis in future studies, e.g., better feature engineering, more
+sophisticated NLP models, alternative financial metrics, or improved market-adjustment
+methods, etc.
+(b) Optionally, identify any logical or mathematical flaws in the impact score method and
+trading strategies implemented in this assignment. Discuss how these could be addressed
+or mitigated in future work.
+
+Deliverables
+•
+
+One report file (PDF or Word) that includes:
+o All team member names and % contribution of each member. If every member
+contributed equally, simply state "equal contribution." If there is disagreement on
+contributions, provide a brief task description for each member. In this case, different
+grades may be assigned individually.
+o All answers and results from the required tasks
+o When including example data in your report, show only a few representative samples
+instead of the entire dataset.
+
+11
+
+•
+
+All Python program files you created, and CSV files generated from your programs. DO
+not upload the original news datasets or Docker images. Please contact Tenshi (the grader) if
+the total size exceeds 1 GB. In that case, include only a portion of your datasets.
+
+Grading Criteria
+•
+
+Quality of work shown on the report (e.g., modeling process and results, methods used, and
+correctness of implementation and analysis)
+
+•
+
+Level of understanding of related subjects as reflected in the report
+
+•
+
+Effort (10%)
+
+12
+
+
