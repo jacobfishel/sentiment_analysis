@@ -1,0 +1,29 @@
+1. Code Style & Readability
+
+Keep it simple: "Follow the KISS principle. Avoid unnecessary complexity."
+
+Consistent naming: "Use descriptive variable/function names, and be consistent with casing (camelCase, snake_case, etc.)."
+
+Comments: "Add comments only where necessary to clarify non-obvious logic."
+
+Readability first: "Prioritize readability over clever tricks or micro-optimizations."
+
+2. Best Practices
+
+"Follow modern best practices for the language used (Python: PEP8, C++: RAII, etc.)."
+
+"Write modular functions; avoid duplicate code."
+
+"Validate inputs and handle errors gracefully."
+
+"Avoid global variables when possible."
+
+"Use meaningful constants instead of magic numbers."
+
+3. Task Focus
+
+"Stay focused on the task description; do not add unrelated features."
+
+"Ask for clarification if the requirements are ambiguous."
+
+"Prioritize completing the functionality correctly before adding optimizations."
