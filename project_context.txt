@@ -1,0 +1,44 @@
+Assignment #2: Sentiment Analysis
+Total Score: 130
+This assignment can be completed individually or by a team of up to three members.
+Due Date: See the course page
+
+Objectives
+Build sentiment analysis models and apply them to financial news to estimate the impact of news on stock prices.
+
+Datasets
+Two financial news datasets collected between 2009–2020 by publishers are provided:
+
+- analyst_ratings.csv – Headlines collected by Publisher A, which may include price targets estimated by professional analysts through complex modeling to estimate the current intrinsic value of the company.
+- headlines.csv – Headlines collected by Publisher B, without price target information.
+
+Schema
+Both datasets follow a similar schema:
+
+analyst_ratings(id, headline, URL, publisher, date, symbol)
+- id: row number
+- headline: headline news that may include the target price (not all headlines indicate the target price)
+- URL: the URL of the headline
+- publisher: news publisher
+- date: published date and time
+- symbol: stock symbol representing the company
+
+headlines(id, headline, URL, publisher, date, symbol)
+
+Problem Context
+Stock prices fluctuate daily due to company developments, sector trends, market sentiment, and unpredictable external factors. Since a company’s intrinsic value is unknown, predicting stock price movements is extremely challenging.
+
+In this assignment, you will develop sentiment analysis models that estimate the potential impact of financial news on future stock prices and write a brief analysis report on the results.
+
+Organization of Program Files and Directories
+The required files and directory structure are provided in Assignment_2.zip.
+
+Before getting started, review the helper functions and test files:
+util.py, webscraping.py, webscraping_headless_parsing.py, dataset_schema.py, test_dataset_schema.py
+
+Each file is currently blank and must be completed by you. Do not rename or rearrange directories or files.
+
+Example execution:
+python 2_trading_sim_eval.py
+should run without extra parameters.
+
